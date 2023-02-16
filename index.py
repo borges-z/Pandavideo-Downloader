@@ -2,16 +2,19 @@ import requests
 import re
 import os
 import shutil
-from datetime import datetime
 import time
 from tqdm import tqdm
+import re
 
 def main():
     os.system('cls || clear')
     start = time.time()
+    one = False
     link = input('link do video. Ex: playlist.m3u8: ')
     saida = input('nome final do video: ')
     plataforma = input('link da plataforma do video. Ex: https://portalhashtag.com/: ')
+
+
     os.system('cls || clear')
     
     hash = 'https://' + link.rsplit("/", 3)[1].replace('b-vz-', 'player-vz-')
@@ -45,42 +48,49 @@ def main():
 
     pri = requests.get(link, headers=headers1)
 
-    #print('\n\n' + hash + '\n\n')
-    n = re.compile(r'\d+')
     res = re.compile(r'[\d]+[x]+[\d]+')
-    check = res.findall(str(pri.content))
+    check = set(res.findall(str(pri.content)))
+    fullhd = ''
+    hd = ''
+    low = ''
+    very_low = ''
+
     for i in check:
-        if i == '1920x1080':
-            resolution = i
-            break
-        elif i == '1280x720':
-            resolution = i
-            break
-        elif i == '640x360':
-            resolution = i
-            break
-        elif i == '842x480':
-            resolution = i
-            break
+        if i in '1920x1080':
+            fullhd = i
+        elif i in '1280x720':
+            hd = i
+        elif i in '640x360':
+            very_low = i
+        elif i in '842x480':
+            low = i
         else:
             print('[ERRO]- erro ao obter a resolução')
-
-    new = link.rsplit("/", 2)[0].replace('b-', '').replace('.br', '').replace('.tv.', '.cdn1.') + '/'
     
+    resolution = input(f"escreva qual resolução deseja, exemplos: {fullhd}, {hd}, {low}, {very_low}: ")
+    new = link.rsplit("/", 2)[0].replace('//b-', '//').replace('.br', '').replace('.tv.', '.cdn1.') + '/'
+    linka = 'https://' + link.rsplit("/", 2)[0].replace('https://b-', '').replace('.br', '').replace('.tv.pandavideo.com', '.b-cdn.net/')
     link3 = new + hash2 + '/' + resolution + '/' + 'video.m3u8'
+    linknew = linka + hash2 + '/' + resolution + '/' + 'video.m3u8'
     
-    second = requests.get(link3, headers=headers2)
-    
+    try:
+        second = requests.get(link3, headers=headers2)
+        one = True
+    except:
+        second = requests.get(linknew, headers=headers2)
 
     lista =[]
 
     m = str(second.content)
     s = m.split('\\')
     for i in s:
-        if len(i) <= 100:
-            a = str(i).replace('n', '')
-            if a[0] == 'v':
-                lista.append(a)
+        if len(i) <= 14:
+            if i in "'b'#EXTM3U'" or i in "#EXT-X-ENDLIST":
+                pass
+            else:
+                a = str(i).replace('n', '')
+                if a[0] == 'v':
+                    lista.append(a)
 
     temp_folder = f"{os.getcwd()}/temp"
     if not os.path.exists(temp_folder):
@@ -89,11 +99,20 @@ def main():
     if not os.path.exists(videos):
         os.makedirs(videos)
 
-    for i, elem in enumerate(tqdm(lista)):
-        tr = requests.get(new + hash2 + '/' + resolution + '/' + elem, headers=headers1)
-        with open(f'{temp_folder}/input{i}.ts', 'wb') as file, open(f'{temp_folder}/temp.txt', 'a') as l:
-            file.write(tr.content)
-            l.write(f'file input{i}.ts' + '\n')
+    if one == True:
+        for i, elem in enumerate(tqdm(lista)):
+            nn = new + hash2 + '/' + resolution + '/' + elem
+            tr = requests.get(new + hash2 + '/' + resolution + '/' + elem, headers=headers1)
+            with open(f'{temp_folder}/input{i}.ts', 'wb') as file, open(f'{temp_folder}/temp.txt', 'a') as l:
+                file.write(tr.content)
+                l.write(f'file input{i}.ts' + '\n')
+    else: 
+        for i, elem in enumerate(tqdm(lista)):
+            nn = linka + hash2 + '/' + resolution + '/' + elem
+            tr = requests.get(nn, headers=headers1)
+            with open(f'{temp_folder}/input{i}.ts', 'wb') as file, open(f'{temp_folder}/temp.txt', 'a') as l:
+                file.write(tr.content)
+                l.write(f'file input{i}.ts' + '\n')
 
     os.system('ffmpeg -loglevel quiet -f concat -safe 0 -i "{}/temp.txt" -bsf:a aac_adtstoasc -vcodec copy -c copy -crf 60 "videos/{}.mp4"'.format(temp_folder, saida))
 
