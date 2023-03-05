@@ -1,8 +1,9 @@
-# Pandavideo-Downloader
- Script para baixar videos hospedados na plataforma da pandavideo.
+# PandaVideo Downloader
 
- Requesistos 
-    pip install -r requirements.txt
-    ffmpeg: https://ffmpeg.org/download.html
+Esse é um script para baixar vídeos da plataforma [pandavideo](https://pandavideo.com/).
 
-Você precisa adicionar o ffmpeg ao path do seu sistema para que ele funcione perfeitamente em todos os diretórios do computador.
+
+# Requisitos
+
+A única coisa que você vai precisar para executar o script é o [Python](https://www.python.org/).
+Antigamente você precisaria do ffmpeg adicionado ao seu path para poder executar o script, mas agora foi adicionado na pasta bin.

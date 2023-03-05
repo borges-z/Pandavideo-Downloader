@@ -7,7 +7,14 @@ from tqdm import tqdm
 import re
 
 def main():
+    if os.path.exists("temp"):
+        shutil.rmtree("temp")
+
     os.system('cls || clear')
+    azul = '\033[34m'
+    vermelho = '\033[31m'
+    verde = '\033[32m'
+    term = '\033[m'
     start = time.time()
     one = False
     link = input('link do video. Ex: playlist.m3u8: ')
@@ -61,15 +68,20 @@ def main():
         elif i in '1280x720':
             hd = i
         elif i in '640x360':
-            very_low = i
-        elif i in '842x480':
             low = i
+        elif i in '842x480':
+            very_low = i
         else:
-            print('[ERRO]- erro ao obter a resolução')
+            print(f'{vermelho}[ERRO] - Falha a obter a resolução{term}')
+            exit()
     
-    resolution = input(f"escreva qual resolução deseja, exemplos: {fullhd}, {hd}, {low}, {very_low}: ")
+    resolution = input(f"Escreva qual resolução deseja, exemplos: {fullhd}, {hd}, {low}, {very_low}: ")
+    os.system('cls || clear')
+
     new = link.rsplit("/", 2)[0].replace('//b-', '//').replace('.br', '').replace('.tv.', '.cdn1.') + '/'
+    
     linka = 'https://' + link.rsplit("/", 2)[0].replace('https://b-', '').replace('.br', '').replace('.tv.pandavideo.com', '.b-cdn.net/')
+
     link3 = new + hash2 + '/' + resolution + '/' + 'video.m3u8'
     linknew = linka + hash2 + '/' + resolution + '/' + 'video.m3u8'
     
@@ -113,14 +125,29 @@ def main():
             with open(f'{temp_folder}/input{i}.ts', 'wb') as file, open(f'{temp_folder}/temp.txt', 'a') as l:
                 file.write(tr.content)
                 l.write(f'file input{i}.ts' + '\n')
+    try:
+        print("Juntando...")
+        os.chdir('bin')
+        os.system('ffmpeg -loglevel quiet -f concat -safe 0 -i "{}/temp.txt" -bsf:a aac_adtstoasc -vcodec copy -c copy -crf 60 "../videos/{}.mp4"'.format(temp_folder, saida))
+    
+    except:
+        print("[ERRO] -> Problema ao juntar arquivos. Reporte!")
 
-    os.system('ffmpeg -loglevel quiet -f concat -safe 0 -i "{}/temp.txt" -bsf:a aac_adtstoasc -vcodec copy -c copy -crf 60 "videos/{}.mp4"'.format(temp_folder, saida))
-
+    resmeta = input("Deseja remover os metadados? [y/n] ")
+    if resmeta in ['yes', 'Y', 'y', 'ye', 'Yes', 'yEs', 'yeS']:
+        print(f'{azul}[INFO] - Apagando os metadados{term}')
+        os.system(f"exiftool -q -all= -overwrite_original ../videos/{saida}.mp4")
+    resmod = input("Deseja modificar os dados de criação/modificação? [y/n] ")
+    if resmod in ['yes', 'Y', 'y', 'ye', 'Yes', 'yEs', 'yeS']:
+        print(f'{azul}[INFO] - Modificando dados{term}')
+        os.system("""exiftool -q -FileModifyDate="1969:10:29 00:00:00" -FileCreateDate="1969:10:29 00:00:00" -overwrite_original ../videos/{}.mp4""".format(saida))
+    
     shutil.rmtree(temp_folder)
 
     end = time.time()
     lep = round(end - start)
-    print(f'tempo: {lep} segundos para a finalização do download.')
+    print(f'{azul}[INFO] - tempo: {lep} segundos para a finalização do download.{term}')
+    print(f'{verde}[RES] - Download terminado com sucesso!{term}')
 
 
 main()
