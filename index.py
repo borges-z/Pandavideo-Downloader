@@ -20,6 +20,7 @@ def main():
     link = input('link do video. Ex: playlist.m3u8: ')
     saida = input('nome final do video: ')
     plataforma = input('link da plataforma do video. Ex: https://portalhashtag.com/: ')
+    astro = False
 
 
     os.system('cls || clear')
@@ -37,6 +38,21 @@ def main():
         'Sec-Fetch-Mode': 'no-cors',
         'Sec-Fetch-Site': 'cross-site',
         'Cache-Control': 'max-age=0',
+        'Te': 'trailers'
+    }
+
+    headers_astronmembers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/112.0',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,pt-BR;q=0.8,pt;q=0.5,en;q=0.3',
+        'Accept-Encoding': 'gzip, deflate',
+        'Origin': f'{hash}',
+        'Referer': f'{hash}',
+        'Upgrade-Insecure-Requests': '1',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
         'Te': 'trailers'
     }
 
@@ -79,30 +95,47 @@ def main():
     os.system('cls || clear')
 
     new = link.rsplit("/", 2)[0].replace('//b-', '//').replace('.br', '').replace('.tv.', '.cdn1.') + '/'
-    
+
     linka = 'https://' + link.rsplit("/", 2)[0].replace('https://b-', '').replace('.br', '').replace('.tv.pandavideo.com', '.b-cdn.net/')
 
     link3 = new + hash2 + '/' + resolution + '/' + 'video.m3u8'
     linknew = linka + hash2 + '/' + resolution + '/' + 'video.m3u8'
-    
-    try:
-        second = requests.get(link3, headers=headers2)
+
+    if "astronmembers" in plataforma:
+        print("aqui")
+        new = new.replace("https://", "").replace("/", "") + ".br"
+        link3 = new + "/" + hash2 + '/' + resolution + '/' + 'video.m3u8'
+        link3 = "b-" + link3.replace("cdn1", "tv").replace("https://", "")
+        link3 = "https://" + link3
+        second = requests.get(link3, headers=headers1)
         one = True
-    except:
-        second = requests.get(linknew, headers=headers2)
+        astro = True
+    else:
+        try:
+            second = requests.get(link3, headers=headers2)
+            one = True
+        except:
+            second = requests.get(linknew, headers=headers2)
 
     lista =[]
 
     m = str(second.content)
     s = m.split('\\')
-    for i in s:
-        if len(i) <= 14:
-            if i in "'b'#EXTM3U'" or i in "#EXT-X-ENDLIST":
-                pass
-            else:
-                a = str(i).replace('n', '')
-                if a[0] == 'v':
-                    lista.append(a)
+    if astro == True:
+        for i in s:
+            if len(i) > 25:
+                if i[0] == 'n':
+                    i = i.replace(i[0], "")
+                    lista.append(i)
+    else:
+        for i in s:
+            if len(i) <= 14:
+                if i in "'b'#EXTM3U'" or i in "#EXT-X-ENDLIST":
+                    pass
+                else:
+                    a = str(i).replace('n', '')
+                    if a[0] == 'v':
+                        lista.append(a)
 
     temp_folder = f"{os.getcwd()}/temp"
     if not os.path.exists(temp_folder):
@@ -111,14 +144,27 @@ def main():
     if not os.path.exists(videos):
         os.makedirs(videos)
 
-    if one == True:
+    if one == True & astro == True:
+        for i, elem in enumerate(tqdm(lista)):
+            elem = elem.replace("-cd.et", "-cdn.net").replace("bcd_toke=", 'bcdn_token=').replace("toke_path=", "token_path=")
+            tr = requests.get(elem, headers=headers_astronmembers)
+            if tr.status_code == 403:
+                pass
+            else:
+                with open(f'{temp_folder}/input{i}.ts', 'wb') as file, open(f'{temp_folder}/temp.txt', 'a') as l:
+                    file.write(tr.content)
+                    l.write(f'file input{i}.ts' + '\n')
+
+    elif one == True:
         for i, elem in enumerate(tqdm(lista)):
             nn = new + hash2 + '/' + resolution + '/' + elem
             tr = requests.get(new + hash2 + '/' + resolution + '/' + elem, headers=headers1)
             with open(f'{temp_folder}/input{i}.ts', 'wb') as file, open(f'{temp_folder}/temp.txt', 'a') as l:
                 file.write(tr.content)
                 l.write(f'file input{i}.ts' + '\n')
-    else: 
+    else:
+        print(lista)
+        input()
         for i, elem in enumerate(tqdm(lista)):
             nn = linka + hash2 + '/' + resolution + '/' + elem
             tr = requests.get(nn, headers=headers1)
@@ -126,6 +172,7 @@ def main():
                 file.write(tr.content)
                 l.write(f'file input{i}.ts' + '\n')
     try:
+        print("chegou aqui pulou?")
         print("Juntando...")
         os.chdir('bin')
         os.system('ffmpeg -loglevel quiet -f concat -safe 0 -i "{}/temp.txt" -bsf:a aac_adtstoasc -vcodec copy -c copy -crf 60 "../videos/{}.mp4"'.format(temp_folder, saida))
