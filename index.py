@@ -102,7 +102,6 @@ def main():
     linknew = linka + hash2 + '/' + resolution + '/' + 'video.m3u8'
 
     if "astronmembers" in plataforma:
-        print("aqui")
         new = new.replace("https://", "").replace("/", "") + ".br"
         link3 = new + "/" + hash2 + '/' + resolution + '/' + 'video.m3u8'
         link3 = "b-" + link3.replace("cdn1", "tv").replace("https://", "")
@@ -125,7 +124,7 @@ def main():
         for i in s:
             if len(i) > 25:
                 if i[0] == 'n':
-                    i = i.replace(i[0], "")
+                    i = i.replace("nhttps", "https")
                     lista.append(i)
     else:
         for i in s:
@@ -146,7 +145,6 @@ def main():
 
     if one == True & astro == True:
         for i, elem in enumerate(tqdm(lista)):
-            elem = elem.replace("-cd.et", "-cdn.net").replace("bcd_toke=", 'bcdn_token=').replace("toke_path=", "token_path=")
             tr = requests.get(elem, headers=headers_astronmembers)
             if tr.status_code == 403:
                 pass
@@ -163,8 +161,6 @@ def main():
                 file.write(tr.content)
                 l.write(f'file input{i}.ts' + '\n')
     else:
-        print(lista)
-        input()
         for i, elem in enumerate(tqdm(lista)):
             nn = linka + hash2 + '/' + resolution + '/' + elem
             tr = requests.get(nn, headers=headers1)
@@ -172,7 +168,6 @@ def main():
                 file.write(tr.content)
                 l.write(f'file input{i}.ts' + '\n')
     try:
-        print("chegou aqui pulou?")
         print("Juntando...")
         os.chdir('bin')
         os.system('ffmpeg -loglevel quiet -f concat -safe 0 -i "{}/temp.txt" -bsf:a aac_adtstoasc -vcodec copy -c copy -crf 60 "../videos/{}.mp4"'.format(temp_folder, saida))
